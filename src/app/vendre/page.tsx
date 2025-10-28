@@ -32,7 +32,8 @@ export default function Vendre() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // ✅ Correctif TS pour le build (RHF + Zod)
+    resolver: zodResolver(schema) as any,
     defaultValues: { energie: "Essence", canton: "GE" },
   });
 
@@ -50,11 +51,7 @@ export default function Vendre() {
       const fd = new FormData();
       fd.append("file", file);
 
-      const res = await fetch("/api/ocr", {
-        method: "POST",
-        body: fd,
-      });
-
+      const res = await fetch("/api/ocr", { method: "POST", body: fd });
       if (!res.ok) {
         alert("Erreur lors de l'analyse OCR.");
         return;
@@ -273,7 +270,7 @@ export default function Vendre() {
           <p className="text-sm text-gray-600">
             Calcul indicatif basé sur énergie/CO₂/poids (non contractuel).
           </p>
-          <div className="text-2xl font-semibold mt-2">
+        <div className="text-2xl font-semibold mt-2">
             {impotGE === null ? "—" : `${impotGE} CHF/an`}
           </div>
         </div>
