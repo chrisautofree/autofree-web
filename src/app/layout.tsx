@@ -1,5 +1,6 @@
 import "./globals.css";
 import Link from "next/link";
+import { CarFront } from "lucide-react"; // 🚗 Icône voiture
 
 export const metadata = {
   title: "AutoFree – Ventes de véhicules d’occasion en Suisse",
@@ -19,8 +20,12 @@ export default function RootLayout({
         <header className="bg-white shadow-sm sticky top-0 z-50">
           <nav className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
             {/* Logo / Nom du site */}
-            <Link href="/" className="text-xl font-semibold text-blue-700">
-              AutoFree
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-xl font-semibold text-blue-700 hover:opacity-90"
+            >
+              <CarFront size={26} className="text-blue-700" />
+              <span>AutoFree</span>
             </Link>
 
             {/* Liens */}
