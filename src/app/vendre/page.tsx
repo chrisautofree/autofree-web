@@ -1,28 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+const YEARS = (() => {
+  const current = new Date().getFullYear();
+  const years: number[] = [];
+  for (let y = current; y >= 1990; y--) years.push(y);
+  return years;
+})();
 
 export default function VendrePage() {
   const [marque, setMarque] = useState("");
   const [modele, setModele] = useState("");
-  const [energie, setEnergie] = useState("Essence");
-  const [annee, setAnnee] = useState("");
+
+  const [canton, setCanton] = useState("");
+  const [couleur, setCouleur] = useState(""); // obligatoire
+  const [energie, setEnergie] = useState(""); // obligatoire
+  const [boite, setBoite] = useState(""); // obligatoire
+  const [traction, setTraction] = useState(""); // obligatoire
+
+  const [annee, setAnnee] = useState(""); // dropdown
   const [km, setKm] = useState("");
   const [prix, setPrix] = useState("");
-  const [canton, setCanton] = useState("");
-  const [couleur, setCouleur] = useState("Inconnue");
-  const [boite, setBoite] = useState("Manuelle");
-  const [traction, setTraction] = useState("Avant");
+
+  const [puissance, setPuissance] = useState<string>(""); // obligatoire
   const [co2, setCo2] = useState("");
   const [poids, setPoids] = useState("");
+
   const [impotEstime, setImpotEstime] = useState<number | null>(null);
 
-  const canEstimateTax =
-    canton &&
-    energie &&
-    (co2 !== "" || poids !== "");
+  const canEstimateTax = useMemo(
+    () => Boolean(canton && energie && (co2 !== "" || poids !== "")),
+    [canton, energie, co2, poids]
+  );
 
-  // ✅ Fonction de prévisualisation d’impôt corrigée
   const onPreview = async () => {
     if (!canEstimateTax) {
       setImpotEstime(null);
@@ -34,8 +45,7 @@ export default function VendrePage() {
       params.set("energie", energie);
       if (co2) params.set("co2", co2);
       if (poids) params.set("poids", poids);
-
-      const url = `/api/impot?${params.toString()}`; // ✅ backticks obligatoires
+      const url = `/api/impot?${params.toString()}`;
       const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
       setImpotEstime(typeof data.value === "number" ? data.value : null);
@@ -44,9 +54,16 @@ export default function VendrePage() {
     }
   };
 
-  // ✅ Soumission du formulaire
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // validations minimales côté client
+    if (!energie) return alert("Veuillez choisir l’énergie.");
+    if (!traction) return alert("Veuillez choisir la traction.");
+    if (!boite) return alert("Veuillez choisir la boîte de vitesses.");
+    if (!couleur) return alert("Veuillez choisir la couleur.");
+    if (!annee) return alert("Veuillez choisir l’année.");
+    if (!puissance || Number(puissance) <= 0) return alert("Veuillez indiquer une puissance valide.");
 
     const annonce = {
       marque,
@@ -59,6 +76,7 @@ export default function VendrePage() {
       couleur,
       boite,
       traction,
+      puissance: Number(puissance),
       co2: co2 ? Number(co2) : null,
       poids: poids ? Number(poids) : null,
     };
@@ -69,24 +87,29 @@ export default function VendrePage() {
       body: JSON.stringify(annonce),
     });
 
-    if (res.ok) {
-      alert("Annonce créée avec succès !");
-      setMarque("");
-      setModele("");
-      setEnergie("Essence");
-      setAnnee("");
-      setKm("");
-      setPrix("");
-      setCanton("");
-      setCouleur("Inconnue");
-      setBoite("Manuelle");
-      setTraction("Avant");
-      setCo2("");
-      setPoids("");
-      setImpotEstime(null);
-    } else {
-      alert("Erreur lors de la création de l’annonce.");
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      return alert("Erreur lors de la création de l’annonce. " + (e.error || ""));
     }
+
+    alert("Annonce créée avec succès !");
+    // reset
+    setMarque("");
+    setModele("");
+    setCanton("");
+    setCouleur("");
+    setEnergie("");
+    setBoite("");
+    setTraction("");
+    setAnnee("");
+    setKm("");
+    setPrix("");
+    setPuissance("");
+    setCo2("");
+    setPoids("");
+    setImpotEstime(null);
+    // Redirection possible :
+    // window.location.href = "/recherche";
   };
 
   return (
@@ -112,10 +135,15 @@ export default function VendrePage() {
           />
         </div>
 
-        {/* Canton et Couleur */}
+        {/* Canton & Couleur (couleur obligatoire) */}
         <div className="grid grid-cols-2 gap-4">
-          <select value={canton} onChange={(e) => setCanton(e.target.value)} required className="border p-2 rounded">
-            <option value="">Canton *</option>
+          <select
+            value={canton}
+            onChange={(e) => setCanton(e.target.value)}
+            required
+            className="border p-2 rounded"
+          >
+            <option value="">— Sélectionner le canton — *</option>
             <option value="GE">Genève</option>
             <option value="VD">Vaud</option>
             <option value="VS">Valais</option>
@@ -124,42 +152,77 @@ export default function VendrePage() {
             <option value="JU">Jura</option>
           </select>
 
-          <select value={couleur} onChange={(e) => setCouleur(e.target.value)} className="border p-2 rounded">
-            <option value="Inconnue">Couleur *</option>
+          <select
+            value={couleur}
+            onChange={(e) => setCouleur(e.target.value)}
+            required
+            className="border p-2 rounded"
+          >
+            <option value="">— Sélectionner la couleur — *</option>
             <option value="Noir">Noir</option>
             <option value="Blanc">Blanc</option>
             <option value="Gris">Gris</option>
+            <option value="Argent">Argent</option>
             <option value="Bleu">Bleu</option>
             <option value="Rouge">Rouge</option>
             <option value="Vert">Vert</option>
+            <option value="Jaune">Jaune</option>
+            <option value="Orange">Orange</option>
+            <option value="Marron">Marron</option>
+            <option value="Violet">Violet</option>
             <option value="Autre">Autre</option>
           </select>
         </div>
 
-        {/* Boîte et Traction */}
+        {/* Boîte & Traction (obligatoires) */}
         <div className="grid grid-cols-2 gap-4">
-          <select value={boite} onChange={(e) => setBoite(e.target.value)} className="border p-2 rounded">
+          <select
+            value={boite}
+            onChange={(e) => setBoite(e.target.value)}
+            required
+            className="border p-2 rounded"
+          >
+            <option value="">— Boîte de vitesses — *</option>
             <option value="Manuelle">Boîte manuelle</option>
             <option value="Automatique">Boîte automatique</option>
           </select>
 
-          <select value={traction} onChange={(e) => setTraction(e.target.value)} className="border p-2 rounded">
-            <option value="Avant">Traction avant</option>
-            <option value="Arrière">Propulsion</option>
-            <option value="4x4">4 roues motrices</option>
+          <select
+            value={traction}
+            onChange={(e) => setTraction(e.target.value)}
+            required
+            className="border p-2 rounded"
+          >
+            <option value="">— Traction — *</option>
+            <option value="Traction avant">Traction avant</option>
+            <option value="Propulsion">Propulsion</option>
+            <option value="4 roues motrices">4 roues motrices</option>
           </select>
         </div>
 
-        {/* Année / Énergie */}
+        {/* Année (dropdown) & Énergie (obligatoire) */}
         <div className="grid grid-cols-2 gap-4">
-          <input
+          <select
             value={annee}
             onChange={(e) => setAnnee(e.target.value)}
-            placeholder="Année *"
-            className="border p-2 rounded"
             required
-          />
-          <select value={energie} onChange={(e) => setEnergie(e.target.value)} className="border p-2 rounded">
+            className="border p-2 rounded"
+          >
+            <option value="">— Année — *</option>
+            {YEARS.map((y) => (
+              <option key={y} value={String(y)}>
+                {y}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={energie}
+            onChange={(e) => setEnergie(e.target.value)}
+            required
+            className="border p-2 rounded"
+          >
+            <option value="">— Énergie — *</option>
             <option value="Essence">Essence</option>
             <option value="Diesel">Diesel</option>
             <option value="Hybride">Hybride</option>
@@ -174,6 +237,7 @@ export default function VendrePage() {
             onChange={(e) => setKm(e.target.value)}
             placeholder="Kilométrage *"
             className="border p-2 rounded"
+            inputMode="numeric"
             required
           />
           <input
@@ -181,35 +245,51 @@ export default function VendrePage() {
             onChange={(e) => setPrix(e.target.value)}
             placeholder="Prix (CHF) *"
             className="border p-2 rounded"
+            inputMode="numeric"
             required
           />
         </div>
 
-        {/* CO₂ et Poids */}
+        {/* Puissance (obligatoire) */}
+        <div>
+          <input
+            value={puissance}
+            onChange={(e) => setPuissance(e.target.value)}
+            placeholder="Puissance (p. ex. 110) *"
+            className="border p-2 rounded w-full"
+            inputMode="numeric"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Indique la puissance du véhicule (en ch ou kW).
+          </p>
+        </div>
+
+        {/* CO₂ et Poids (optionnels) */}
         <div className="grid grid-cols-2 gap-4">
           <input
             value={co2}
             onChange={(e) => setCo2(e.target.value)}
             placeholder="CO₂ (g/km)"
             className="border p-2 rounded"
+            inputMode="numeric"
           />
           <input
             value={poids}
             onChange={(e) => setPoids(e.target.value)}
             placeholder="Poids (kg)"
             className="border p-2 rounded"
+            inputMode="numeric"
           />
         </div>
 
-        {/* Bouton prévisualisation impôt */}
+        {/* Prévisualisation impôt */}
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={onPreview}
             disabled={!canEstimateTax}
-            className={`px-4 py-2 border rounded ${
-              canEstimateTax ? "hover:bg-gray-50" : "opacity-60 cursor-not-allowed"
-            }`}
+            className={`px-4 py-2 border rounded ${canEstimateTax ? "hover:bg-gray-50" : "opacity-60 cursor-not-allowed"}`}
             title={
               canEstimateTax
                 ? `Calculer l’estimation basée sur Canton + Énergie + (CO₂ ou Poids)`
