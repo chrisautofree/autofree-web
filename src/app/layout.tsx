@@ -1,28 +1,53 @@
+import "./globals.css";
+import Link from "next/link";
+
 export const metadata = {
-  title: "AutoFree",
-  description: "Vendez votre voiture simplement, sans stress – AutoFree.ch",
+  title: "AutoFree – Ventes de véhicules d’occasion en Suisse",
+  description:
+    "Achetez ou vendez votre voiture d’occasion en Suisse facilement et gratuitement.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="fr">
-      <body className="min-h-screen bg-gray-50 text-gray-900">
-        <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="/" className="font-bold text-xl text-blue-700">AutoFree</a>
-            <nav className="flex gap-4 text-sm">
-              <a href="/vendre" className="hover:underline">Vendre</a>
-              <a href="/recherche" className="hover:underline">Rechercher</a>
-            </nav>
-          </div>
+      <body className="bg-gray-100 text-gray-900">
+        {/* ----- NAVBAR ----- */}
+        <header className="bg-white shadow-sm sticky top-0 z-50">
+          <nav className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+            {/* Logo / Nom du site */}
+            <Link href="/" className="text-xl font-semibold text-blue-700">
+              AutoFree
+            </Link>
+
+            {/* Liens */}
+            <div className="flex items-center gap-6 text-sm">
+              <Link href="/recherche" className="hover:text-blue-600">
+                Annonces
+              </Link>
+              <Link href="/vendre" className="hover:text-blue-600">
+                Vendre
+              </Link>
+              <a
+                href="https://autofree-web.vercel.app/api/annonces"
+                className="hover:text-blue-600"
+                target="_blank"
+              >
+                API
+              </a>
+            </div>
+          </nav>
         </header>
 
-        <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+        {/* ----- CONTENU ----- */}
+        <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
 
-        <footer className="border-t text-sm text-gray-500 py-8 mt-12">
-          <div className="max-w-6xl mx-auto px-4">
-            © {new Date().getFullYear()} AutoFree.ch – Simplicité & liberté automobile
-          </div>
+        {/* ----- PIED DE PAGE ----- */}
+        <footer className="mt-10 border-t py-4 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} AutoFree.ch — Tous droits réservés
         </footer>
       </body>
     </html>
