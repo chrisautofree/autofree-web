@@ -32,8 +32,7 @@ export default function Vendre() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    // ✅ Correctif TS pour le build (RHF + Zod)
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as any, // ✅ correctif TypeScript
     defaultValues: { energie: "Essence", canton: "GE" },
   });
 
@@ -42,21 +41,14 @@ export default function Vendre() {
   const poids = watch("poids");
 
   /** ---------------------------
-   *  OCR : envoie la photo à /api/ocr et pré-remplit les champs
+   *  OCR : lit la carte grise et préremplit les champs
    *  --------------------------- */
   async function runOcr(file?: File) {
     if (!file) return;
-
     try {
       const fd = new FormData();
       fd.append("file", file);
-
       const res = await fetch("/api/ocr", { method: "POST", body: fd });
-      if (!res.ok) {
-        alert("Erreur lors de l'analyse OCR.");
-        return;
-      }
-
       const data = await res.json();
 
       if (data.marque) setValue("marque", data.marque);
@@ -69,7 +61,7 @@ export default function Vendre() {
 
       alert("Lecture terminée ✅ Les champs ont été remplis automatiquement.");
     } catch (err: any) {
-      alert("Erreur réseau OCR : " + (err?.message || "inconnue"));
+      alert("Erreur OCR : " + (err?.message || "inconnue"));
     }
   }
 
@@ -82,20 +74,16 @@ export default function Vendre() {
       if (energie) params.set("energie", energie);
       if (co2) params.set("co2", String(co2));
       if (poids) params.set("poids", String(poids));
-
-      const res = await fetch(`/api/impot-ge?${params.toString()}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(`/api/impot-ge?${params.toString()}`);
       const data = await res.json();
       setImpotGE(typeof data.value === "number" ? data.value : null);
-    } catch (e: any) {
-      console.error(e);
+    } catch {
       setImpotGE(null);
     }
   };
 
   /** ---------------------------
-   *  SUBMIT : publie l’annonce via /api/annonces
+   *  SUBMIT : publie l’annonce
    *  --------------------------- */
   const onSubmit = async (data: FormData) => {
     try {
@@ -104,15 +92,8 @@ export default function Vendre() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        alert("Erreur: " + (e.error || res.statusText));
-        return;
-      }
-
       const created = await res.json();
-      alert("Annonce publiée ✅\nID: " + created.id);
+      alert("Annonce publiée ✅ ID: " + created.id);
       window.location.href = "/recherche";
     } catch (err: any) {
       alert("Erreur réseau: " + (err?.message || "inconnue"));
@@ -124,7 +105,7 @@ export default function Vendre() {
       <div className="md:col-span-2 space-y-4">
         <h1 className="text-2xl font-semibold">Vendre mon véhicule</h1>
 
-        {/* Upload carte grise (appel OCR) */}
+        {/* Upload carte grise */}
         <label className="block p-4 border rounded-lg bg-white">
           <div className="font-medium mb-2">
             Photo du permis de circulation (côté droit)
@@ -135,11 +116,11 @@ export default function Vendre() {
             onChange={(e) => runOcr(e.target.files?.[0] || undefined)}
           />
           <p className="text-sm text-gray-500 mt-2">
-            Astuce : document bien éclairé, à plat. (OCR réel à venir)
+            Astuce : document bien éclairé, à plat.
           </p>
         </label>
 
-        {/* Formulaire d’annonce */}
+        {/* Formulaire principal */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -184,22 +165,19 @@ export default function Vendre() {
                 placeholder="AAAA"
                 {...register("annee")}
               />
-              {errors.annee && (
-                <p className="text-xs text-red-600">{errors.annee.message}</p>
-              )}
             </div>
 
             <div>
-              <label className="text-sm">Canton (optionnel)</label>
+              <label className="text-sm">Canton</label>
               <input
                 className="w-full border rounded px-3 py-2"
-                placeholder="GE, VD, VS…"
+                placeholder="GE, VD..."
                 {...register("canton")}
               />
             </div>
 
             <div>
-              <label className="text-sm">CO₂ (g/km) (optionnel)</label>
+              <label className="text-sm">CO₂ (g/km)</label>
               <input
                 className="w-full border rounded px-3 py-2"
                 type="number"
@@ -208,7 +186,7 @@ export default function Vendre() {
             </div>
 
             <div>
-              <label className="text-sm">Poids à vide (kg) (optionnel)</label>
+              <label className="text-sm">Poids à vide (kg)</label>
               <input
                 className="w-full border rounded px-3 py-2"
                 type="number"
@@ -225,9 +203,6 @@ export default function Vendre() {
                 type="number"
                 {...register("km")}
               />
-              {errors.km && (
-                <p className="text-xs text-red-600">{errors.km.message}</p>
-              )}
             </div>
 
             <div>
@@ -237,9 +212,6 @@ export default function Vendre() {
                 type="number"
                 {...register("prix")}
               />
-              {errors.prix && (
-                <p className="text-xs text-red-600">{errors.prix.message}</p>
-              )}
             </div>
           </div>
 
@@ -266,11 +238,13 @@ export default function Vendre() {
       {/* Encadré impôt GE */}
       <aside className="space-y-3">
         <div className="p-4 bg-white rounded-lg border">
-          <h2 className="font-medium mb-2">Impôt des plaques – Genève (estimation)</h2>
+          <h2 className="font-medium mb-2">
+            Impôt des plaques – Genève (estimation)
+          </h2>
           <p className="text-sm text-gray-600">
-            Calcul indicatif basé sur énergie/CO₂/poids (non contractuel).
+            Calcul indicatif basé sur énergie/CO₂/poids.
           </p>
-        <div className="text-2xl font-semibold mt-2">
+          <div className="text-2xl font-semibold mt-2">
             {impotGE === null ? "—" : `${impotGE} CHF/an`}
           </div>
         </div>
