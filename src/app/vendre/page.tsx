@@ -16,7 +16,7 @@ const ENERGIES = ["Essence","Diesel","Hybride","Électrique"] as const;
 const BOITES = ["Manuelle","Automatique"] as const;
 const TRACTIONS = ["Traction avant","Propulsion","4 roues motrices"] as const;
 
-// années de l’année courante à 1990
+// années : de l’année courante à 1990
 const THIS_YEAR = new Date().getFullYear();
 const ANNEES = Array.from({ length: THIS_YEAR - 1989 }, (_, i) => String(THIS_YEAR - i)) as const;
 
@@ -112,7 +112,8 @@ export default function Vendre() {
       if (co2 != null) params.set("co2", String(co2));
       if (poids != null) params.set("poids", String(poids));
 
-      const res = await fetch(/api/impot?${params.toString()}, { cache: "no-store" });
+      const url = /api/impot?${params.toString()};
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
       setImpotEstime(typeof data.value === "number" ? data.value : null);
     } catch {
@@ -269,38 +270,4 @@ export default function Vendre() {
               title={
                 canEstimateTax
                   ? "Calculer l’estimation basée sur Canton + Énergie + (CO₂ ou Poids)"
-                  : "Renseignez Canton, Énergie et CO₂ ou Poids pour estimer l’impôt"
-              }
-            >
-              Prévisualisation impôt
-            </button>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-700 text-white rounded disabled:opacity-60"
-            >
-              {isSubmitting ? "Publication…" : "Publier l’annonce"}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Encadré impôt */}
-      <aside className="space-y-3">
-        <div className="p-4 bg-white rounded-lg border">
-          <h2 className="font-medium mb-1">Impôt annuel – Estimation cantonale</h2>
-          <p className="text-sm text-gray-600">
-            {canton ? <>Canton sélectionné : <span className="font-medium">{canton}</span></> : "Sélectionnez un canton"}
-          </p>
-          <p className="text-xs text-gray-500">
-            Affiché uniquement si les données sont suffisantes (Canton + Énergie + CO₂ ou Poids).
-          </p>
-          <div className="text-2xl font-semibold mt-2">
-            {canEstimateTax && impotEstime !== null ? ${impotEstime} CHF/an : "—"}
-          </div>
-        </div>
-      </aside>
-    </section>
-  );
-}
+                  : "Renseignez Canton, Énergie et CO₂ ou Poids
