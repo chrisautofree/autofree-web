@@ -1,19 +1,35 @@
 "use client";
 
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
 
-// 🔹 Données fictives (mock)
-const MOCK = [
-  { id: 1, marque: "Volkswagen", modele: "Golf", canton: "GE", prix: 11900, energie: "Essence", km: 89000, annee: 2017 },
-  { id: 2, marque: "Tesla", modele: "Model 3", canton: "VD", prix: 27900, energie: "Électrique", km: 120000, annee: 2019 },
-  { id: 3, marque: "BMW", modele: "X1", canton: "VS", prix: 16900, energie: "Diesel", km: 155000, annee: 2016 },
-  { id: 4, marque: "Toyota", modele: "Yaris", canton: "GE", prix: 8900, energie: "Hybride", km: 105000, annee: 2015 },
-];
+// Empêche le prerender statique (évite l'erreur au build)
+export const dynamic = "force-dynamic";
 
-export default function Recherche() {
+type Annonce = {
+  id: number;
+  createdAt: string;
+  marque: string;
+  modele: string;
+  energie: string;
+  annee: string;
+  km: number;
+  prix: number;
+  canton?: string;
+};
+
+export default function Page() {
+  // On enveloppe le composant qui utilise useSearchParams dans <Suspense>
+  return (
+    <Suspense fallback={<div className="p-6">Chargement…</div>}>
+      <RechercheClient />
+    </Suspense>
+  );
+}
+
+function RechercheClient() {
   const searchParams = useSearchParams();
-  const q = searchParams.get("q")?.toLowerCase() ?? "";
+  const q = (searchParams.get("q") || "").toLowerCase();
 
   const [filtre, setFiltre] = useState({
     canton: "",
@@ -22,20 +38,41 @@ export default function Recherche() {
     maxPrix: "",
   });
 
-  // 🔍 Filtrage dynamique des résultats
+  const [items, setItems] = useState<Annonce[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/annonces", { cache: "no-store" });
+        const data = await res.json();
+        if (alive) setItems(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const results = useMemo(() => {
-    return MOCK.filter((x) =>
-      (!q || `${x.marque} ${x.modele} ${x.canton}`.toLowerCase().includes(q)) &&
+    return items.filter((x) =>
+      (!q || `${x.marque} ${x.modele} ${x.canton ?? ""}`.toLowerCase().includes(q)) &&
       (!filtre.canton || x.canton === filtre.canton) &&
       (!filtre.energie || x.energie === filtre.energie) &&
       (!filtre.minPrix || x.prix >= Number(filtre.minPrix)) &&
       (!filtre.maxPrix || x.prix <= Number(filtre.maxPrix))
     );
-  }, [q, filtre]);
+  }, [q, filtre, items]);
 
   return (
     <section className="grid gap-4 md:grid-cols-3">
-      {/* 🔸 Barre latérale des filtres */}
+      {/* Filtres */}
       <aside className="space-y-3">
         <div className="p-4 bg-white border rounded">
           <div className="font-medium mb-2 text-lg">Filtres</div>
@@ -89,17 +126,22 @@ export default function Recherche() {
         </div>
       </aside>
 
-      {/* 🔹 Résultats */}
+      {/* Résultats */}
       <div className="md:col-span-2 space-y-3">
         <h1 className="text-xl font-semibold text-gray-800">
-          {results.length} résultat(s)
+          {loading ? "Chargement..." : `${results.length} résultat(s)`}
         </h1>
 
+        {!loading && results.length === 0 && (
+          <div className="p-6 border rounded bg-white text-gray-600">
+            Aucune annonce ne correspond pour l’instant.
+          </div>
+        )}
+
         {results.map((x) => (
-          <a
+          <div
             key={x.id}
-            href={`/voiture/${x.id}`}
-            className="block p-4 bg-white rounded border hover:shadow-sm transition"
+            className="p-4 bg-white rounded border hover:shadow-sm transition"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -107,14 +149,14 @@ export default function Recherche() {
                   {x.marque} {x.modele} • {x.annee}
                 </div>
                 <div className="text-sm text-gray-600">
-                  {x.canton} • {x.energie} • {x.km.toLocaleString()} km
+                  {(x.canton ?? "—")} • {x.energie} • {x.km.toLocaleString()} km
                 </div>
               </div>
               <div className="text-lg font-semibold text-blue-700">
                 CHF {x.prix.toLocaleString()}
               </div>
             </div>
-          </a>
+          </div>
         ))}
       </div>
     </section>
