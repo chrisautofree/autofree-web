@@ -10,13 +10,14 @@ import { useMemo, useState } from "react";
 ---------------------------- */
 const CANTONS = ["GE", "VD", "VS", "FR", "NE", "JU"] as const;
 const COULEURS = [
-  "Noir","Blanc","Gris","Argent","Bleu","Rouge","Vert","Jaune","Orange","Marron","Violet","Autre"
+  "Noir", "Blanc", "Gris", "Argent", "Bleu", "Rouge",
+  "Vert", "Jaune", "Orange", "Marron", "Violet", "Autre"
 ] as const;
-const ENERGIES = ["Essence","Diesel","Hybride","Électrique"] as const;
-const BOITES = ["Manuelle","Automatique"] as const;
-const TRACTIONS = ["Traction avant","Propulsion","4 roues motrices"] as const;
+const ENERGIES = ["Essence", "Diesel", "Hybride", "Électrique"] as const;
+const BOITES = ["Manuelle", "Automatique"] as const;
+const TRACTIONS = ["Traction avant", "Propulsion", "4 roues motrices"] as const;
 
-// années : de l’année courante à 1990
+// années de l’année courante à 1990
 const THIS_YEAR = new Date().getFullYear();
 const ANNEES = Array.from({ length: THIS_YEAR - 1989 }, (_, i) => String(THIS_YEAR - i)) as const;
 
@@ -53,10 +54,6 @@ export default function Vendre() {
     resolver: zodResolver(schema) as any,
     defaultValues: {
       energie: "Essence",
-      canton: undefined,
-      boite: undefined,
-      traction: undefined,
-      couleur: undefined,
       annee: String(THIS_YEAR) as (typeof ANNEES)[number],
     },
   });
@@ -112,8 +109,8 @@ export default function Vendre() {
       if (co2 != null) params.set("co2", String(co2));
       if (poids != null) params.set("poids", String(poids));
 
-     const url = `/api/impot?${params.toString()}`;
-    const res = await fetch(url, { cache: "no-store" });
+      const url = /api/impot?${params.toString()};
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
       setImpotEstime(typeof data.value === "number" ? data.value : null);
     } catch {
@@ -148,126 +145,4 @@ export default function Vendre() {
         <h1 className="text-2xl font-semibold">Vendre mon véhicule</h1>
 
         {/* Upload carte grise */}
-        <label className="block p-4 border rounded-lg bg-white">
-          <div className="font-medium mb-2">Photo du permis de circulation (côté droit)</div>
-          <input type="file" accept="image/*" onChange={(e) => runOcr(e.target.files?.[0] || undefined)} />
-          <p className="text-sm text-gray-500 mt-2">Astuce : document bien éclairé, à plat. (OCR réel à venir)</p>
-        </label>
-
-        {/* Formulaire d’annonce */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          {/* Bloc 1 : Champs obligatoires principaux */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm">Marque</label>
-              <input className="w-full border rounded px-3 py-2" {...register("marque")} />
-              {errors.marque && <p className="text-xs text-red-600">{errors.marque.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Modèle</label>
-              <input className="w-full border rounded px-3 py-2" {...register("modele")} />
-              {errors.modele && <p className="text-xs text-red-600">{errors.modele.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Canton</label>
-              <select className="w-full border rounded px-3 py-2" {...register("canton")}>
-                <option value="">— Sélectionner —</option>
-                {CANTONS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              {errors.canton && <p className="text-xs text-red-600">{errors.canton.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Énergie</label>
-              <select className="w-full border rounded px-3 py-2" {...register("energie")}>
-                {ENERGIES.map((e) => (
-                  <option key={e} value={e}>{e}</option>
-                ))}
-              </select>
-              {errors.energie && <p className="text-xs text-red-600">{errors.energie.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Année</label>
-              <select className="w-full border rounded px-3 py-2" {...register("annee")}>
-                {ANNEES.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-              {errors.annee && <p className="text-xs text-red-600">{errors.annee.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Kilométrage</label>
-              <input className="w-full border rounded px-3 py-2" type="number" {...register("km")} />
-              {errors.km && <p className="text-xs text-red-600">{errors.km.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Prix (CHF)</label>
-              <input className="w-full border rounded px-3 py-2" type="number" {...register("prix")} />
-              {errors.prix && <p className="text-xs text-red-600">{errors.prix.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Couleur</label>
-              <select className="w-full border rounded px-3 py-2" {...register("couleur")}>
-                <option value="">— Sélectionner —</option>
-                {COULEURS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              {errors.couleur && <p className="text-xs text-red-600">{errors.couleur.message}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Boîte de vitesses</label>
-              <select className="w-full border rounded px-3 py-2" {...register("boite")}>
-                <option value="">— Sélectionner —</option>
-                {BOITES.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-              {errors.boite && <p className="text-xs text-red-600">{errors.boite.message as string}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm">Traction</label>
-              <select className="w-full border rounded px-3 py-2" {...register("traction")}>
-                <option value="">— Sélectionner —</option>
-                {TRACTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              {errors.traction && <p className="text-xs text-red-600">{errors.traction.message as string}</p>}
-            </div>
-          </div>
-
-          {/* Bloc 2 : Informations optionnelles */}
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-            <div>
-              <label className="text-sm">CO₂ (g/km) (optionnel)</label>
-              <input className="w-full border rounded px-3 py-2" type="number" {...register("co2")} />
-            </div>
-            <div>
-              <label className="text-sm">Poids à vide (kg) (optionnel)</label>
-              <input className="w-full border rounded px-3 py-2" type="number" {...register("poids")} />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onPreview}
-              disabled={!canEstimateTax}
-              className={`px-4 py-2 border rounded ${
-                canEstimateTax ? "hover:bg-gray-50" : "opacity-60 cursor-not-allowed"
-              }`}
-              title={
-                canEstimateTax
-                  ? "Calculer l’estimation basée sur Canton + Énergie + (CO₂ ou Poids)"
-                  : "Renseignez Canton, Énergie et CO₂ ou Poids
+        <label className="block p-4
