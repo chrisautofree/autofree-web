@@ -112,8 +112,8 @@ export default function Vendre() {
       if (co2 != null) params.set("co2", String(co2));
       if (poids != null) params.set("poids", String(poids));
 
-      const url = /api/impot?${params.toString()};
-      const res = await fetch(url, { cache: "no-store" });
+     const url = `/api/impot?${params.toString()}`;
+    const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
       setImpotEstime(typeof data.value === "number" ? data.value : null);
     } catch {
