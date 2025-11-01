@@ -14,19 +14,17 @@ export default function VendrePage() {
   const [modele, setModele] = useState("");
 
   const [canton, setCanton] = useState("");
-  const [couleur, setCouleur] = useState(""); // obligatoire
-  const [energie, setEnergie] = useState(""); // obligatoire
-  const [boite, setBoite] = useState(""); // obligatoire
-  const [traction, setTraction] = useState(""); // obligatoire
-
-  const [annee, setAnnee] = useState(""); // dropdown
+  const [couleur, setCouleur] = useState("");
+  const [energie, setEnergie] = useState("");
+  const [boite, setBoite] = useState("");
+  const [traction, setTraction] = useState("");
+  const [annee, setAnnee] = useState("");
   const [km, setKm] = useState("");
   const [prix, setPrix] = useState("");
 
-  const [puissance, setPuissance] = useState<string>(""); // obligatoire
+  const [puissance, setPuissance] = useState<string>(""); // en chevaux
   const [co2, setCo2] = useState("");
   const [poids, setPoids] = useState("");
-
   const [impotEstime, setImpotEstime] = useState<number | null>(null);
 
   const canEstimateTax = useMemo(
@@ -45,6 +43,7 @@ export default function VendrePage() {
       params.set("energie", energie);
       if (co2) params.set("co2", co2);
       if (poids) params.set("poids", poids);
+
       const url = `/api/impot?${params.toString()}`;
       const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
@@ -57,13 +56,13 @@ export default function VendrePage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // validations minimales côté client
     if (!energie) return alert("Veuillez choisir l’énergie.");
     if (!traction) return alert("Veuillez choisir la traction.");
     if (!boite) return alert("Veuillez choisir la boîte de vitesses.");
     if (!couleur) return alert("Veuillez choisir la couleur.");
     if (!annee) return alert("Veuillez choisir l’année.");
-    if (!puissance || Number(puissance) <= 0) return alert("Veuillez indiquer une puissance valide.");
+    if (!puissance || Number(puissance) <= 0)
+      return alert("Veuillez indiquer une puissance valide (en chevaux).");
 
     const annonce = {
       marque,
@@ -93,7 +92,7 @@ export default function VendrePage() {
     }
 
     alert("Annonce créée avec succès !");
-    // reset
+    // reset form
     setMarque("");
     setModele("");
     setCanton("");
@@ -108,13 +107,13 @@ export default function VendrePage() {
     setCo2("");
     setPoids("");
     setImpotEstime(null);
-    // Redirection possible :
-    // window.location.href = "/recherche";
   };
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">Mettre en vente un véhicule</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        Mettre en vente un véhicule
+      </h1>
 
       <form onSubmit={onSubmit} className="space-y-4">
         {/* Marque et Modèle */}
@@ -135,7 +134,7 @@ export default function VendrePage() {
           />
         </div>
 
-        {/* Canton & Couleur (couleur obligatoire) */}
+        {/* Canton et Couleur */}
         <div className="grid grid-cols-2 gap-4">
           <select
             value={canton}
@@ -174,7 +173,7 @@ export default function VendrePage() {
           </select>
         </div>
 
-        {/* Boîte & Traction (obligatoires) */}
+        {/* Boîte et Traction */}
         <div className="grid grid-cols-2 gap-4">
           <select
             value={boite}
@@ -200,7 +199,7 @@ export default function VendrePage() {
           </select>
         </div>
 
-        {/* Année (dropdown) & Énergie (obligatoire) */}
+        {/* Année + Énergie */}
         <div className="grid grid-cols-2 gap-4">
           <select
             value={annee}
@@ -250,22 +249,22 @@ export default function VendrePage() {
           />
         </div>
 
-        {/* Puissance (obligatoire) */}
+        {/* Puissance en chevaux */}
         <div>
           <input
             value={puissance}
             onChange={(e) => setPuissance(e.target.value)}
-            placeholder="Puissance (p. ex. 110) *"
+            placeholder="Puissance (en chevaux) *"
             className="border p-2 rounded w-full"
             inputMode="numeric"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            Indique la puissance du véhicule (en ch ou kW).
+            Indique la puissance du véhicule en chevaux (cv).
           </p>
         </div>
 
-        {/* CO₂ et Poids (optionnels) */}
+        {/* CO₂ / Poids */}
         <div className="grid grid-cols-2 gap-4">
           <input
             value={co2}
@@ -289,22 +288,24 @@ export default function VendrePage() {
             type="button"
             onClick={onPreview}
             disabled={!canEstimateTax}
-            className={`px-4 py-2 border rounded ${canEstimateTax ? "hover:bg-gray-50" : "opacity-60 cursor-not-allowed"}`}
-            title={
-              canEstimateTax
-                ? `Calculer l’estimation basée sur Canton + Énergie + (CO₂ ou Poids)`
-                : `Renseignez Canton, Énergie et CO₂ ou Poids pour estimer l’impôt`
-            }
+            className={`px-4 py-2 border rounded ${
+              canEstimateTax ? "hover:bg-gray-50" : "opacity-60 cursor-not-allowed"
+            }`}
           >
             Prévisualisation impôt
           </button>
 
           {impotEstime !== null && (
-            <p className="text-sm text-gray-700">Estimation : {impotEstime.toFixed(2)} CHF / an</p>
+            <p className="text-sm text-gray-700">
+              Estimation : {impotEstime.toFixed(2)} CHF / an
+            </p>
           )}
         </div>
 
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+        >
           Publier l’annonce
         </button>
       </form>
